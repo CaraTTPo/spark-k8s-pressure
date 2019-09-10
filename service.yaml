@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: 2019-09-10T02:55:01Z
+  name: spark-appname-test1-svc
+  namespace: dev
+  ownerReferences:
+  - apiVersion: v1
+    controller: true
+    kind: Pod
+    name: spark-appname-test1
+    uid: 6181cc76-d376-11e9-a205-00163e20c49c
+  resourceVersion: "1542046"
+  selfLink: /api/v1/namespaces/dev/services/spark-appname-test1-svc
+  uid: 61b06f80-d376-11e9-a205-00163e20c49c
+spec:
+  clusterIP: None
+  ports:
+  - name: driver-rpc-port
+    port: 7078
+    protocol: TCP
+    targetPort: 7078
+  - name: blockmanager
+    port: 7079
+    protocol: TCP
+    targetPort: 7079
+  selector:
+    spark-app-selector: spark-appid-test1
+    spark-role: driver
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

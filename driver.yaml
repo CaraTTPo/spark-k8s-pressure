@@ -7,10 +7,10 @@ metadata:
   labels:
     spark-app-selector: spark-appid-test1
     spark-role: driver
-  name: datapipeline-1568084099332-driver
+  name: spark-appname-test1
   namespace: dev
   resourceVersion: "1542244"
-  selfLink: /api/v1/namespaces/dev/pods/datapipeline-1568084099332-driver
+  selfLink: /api/v1/namespaces/dev/pods/spark-appname-test1
   uid: 6181cc76-d376-11e9-a205-00163e20c49c
 spec:
   containers:
@@ -91,7 +91,7 @@ spec:
     name: spark-local-dir-1
   - configMap:
       defaultMode: 420
-      name: datapipeline-1568084099332-driver-conf-map
+      name: spark-appname-test1-conf-map
     name: spark-conf-volume
   - name: spark-token-zr5xz
     secret:

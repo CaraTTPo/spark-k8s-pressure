@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
   spark.properties: |
-    #Java properties built from Kubernetes config map with name: datapipeline-1568084099332-driver-conf-map
+    #Java properties built from Kubernetes config map with name: spark-appname-test1-conf-map
     #Tue Sep 10 10:55:00 CST 2019
     spark.driver.port=7078
     spark.kubernetes.resource.type=python
@@ -15,8 +15,8 @@ data:
     spark.master=k8s\://https\://test-cluster.master.k8s.aipp.io\:6443
     spark.history.kerberos.keytab=none
     spark.driver.memory=1200M
-    spark.kubernetes.driver.pod.name=datapipeline-1568084099332-driver
-    spark.driver.host=datapipeline-1568084099332-driver-svc.dev.svc
+    spark.kubernetes.driver.pod.name=spark-appname-test1
+    spark.driver.host=spark-appname-test1-svc.dev.svc
     spark.history.ui.port=18081
     spark.driver.extraLibraryPath=/usr/hdp/current/hadoop-client/lib/native\:/usr/hdp/current/hadoop-client/lib/native/Linux-amd64-64
     spark.shuffle.io.preferDirectBufs=false
@@ -48,13 +48,13 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: 2019-09-10T02:55:01Z
-  name: datapipeline-1568084099332-driver-conf-map
+  name: spark-appname-test1-conf-map
   namespace: dev
   ownerReferences:
   - apiVersion: v1
     controller: true
     kind: Pod
-    name: datapipeline-1568084099332-driver
+    name: spark-appname-test1
     uid: 6181cc76-d376-11e9-a205-00163e20c49c
   resourceVersion: "1542048"
-  selfLink: /api/v1/namespaces/dev/configmaps/datapipeline-1568084099332-driver-conf-map
+  selfLink: /api/v1/namespaces/dev/configmaps/spark-appname-test1-conf-map
