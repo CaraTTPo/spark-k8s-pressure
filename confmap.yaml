@@ -23,7 +23,7 @@ data:
     spark.submit.deployMode=cluster
     spark.executor.extraJavaOptions=-XX\:MaxDirectMemorySize\=512m
     spark.kubernetes.authenticate.driver.serviceAccountName=spark
-    spark.kubernetes.executor.podNamePrefix=datapipeline-1568084099332
+    spark.kubernetes.executor.podNamePrefix=spark-test1
     spark.history.fs.logDirectory=hdfs\:///spark2-history/
     spark.kubernetes.submitInDriver=true
     spark.kubernetes.pyspark.pythonVersion=3
@@ -55,6 +55,6 @@ metadata:
     controller: true
     kind: Pod
     name: spark-appname-test1
-    uid: 6181cc76-d376-11e9-a205-00163e20c49c
+    uid: 22cf0221-d3a8-11e9-a205-00163e20c49c
   resourceVersion: "1542048"
   selfLink: /api/v1/namespaces/dev/configmaps/spark-appname-test1-conf-map
