@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    spark-app-selector: spark-appid-test1
+    spark-app-selector: {appid}
     spark-role: driver
-  name: spark-appname-test1
+  name: {appname}
   namespace: dev
   resourceVersion: "1542244"
-  selfLink: /api/v1/namespaces/dev/pods/spark-appname-test1
+  selfLink: /api/v1/namespaces/dev/pods/{appname}
 spec:
   containers:
   - args:
@@ -35,7 +35,7 @@ spec:
     - name: SPARK_CONF_DIR
       value: /opt/spark/conf
     image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:test
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
     name: spark-kubernetes-driver
     ports:
     - containerPort: 7078
@@ -66,13 +66,14 @@ spec:
   dnsPolicy: ClusterFirst
   imagePullSecrets:
   - name: aliyun-registry
-  nodeName: sa3.k8s.aipp.io
   restartPolicy: Never
   schedulerName: default-scheduler
   securityContext: {}
   serviceAccount: spark
   serviceAccountName: spark
   terminationGracePeriodSeconds: 30
+  nodeSelector:
+    role: spark-test
   tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/not-ready
@@ -87,7 +88,7 @@ spec:
     name: spark-local-dir-1
   - configMap:
       defaultMode: 420
-      name: spark-appname-test1-conf-map
+      name: {appname}-conf-map
     name: spark-conf-volume
   - name: spark-token-zr5xz
     secret:

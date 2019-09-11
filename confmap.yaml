@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
   spark.properties: |
-    #Java properties built from Kubernetes config map with name: spark-appname-test1-conf-map
+    #Java properties built from Kubernetes config map with name: {appname}-conf-map
     #Tue Sep 10 10:55:00 CST 2019
     spark.driver.port=7078
     spark.kubernetes.resource.type=python
@@ -15,15 +15,15 @@ data:
     spark.master=k8s\://https\://test-cluster.master.k8s.aipp.io\:6443
     spark.history.kerberos.keytab=none
     spark.driver.memory=1200M
-    spark.kubernetes.driver.pod.name=spark-appname-test1
-    spark.driver.host=spark-appname-test1-svc.dev.svc
+    spark.kubernetes.driver.pod.name={appname}
+    spark.driver.host={appname}-svc.dev.svc
     spark.history.ui.port=18081
     spark.driver.extraLibraryPath=/usr/hdp/current/hadoop-client/lib/native\:/usr/hdp/current/hadoop-client/lib/native/Linux-amd64-64
     spark.shuffle.io.preferDirectBufs=false
     spark.submit.deployMode=cluster
     spark.executor.extraJavaOptions=-XX\:MaxDirectMemorySize\=512m
     spark.kubernetes.authenticate.driver.serviceAccountName=spark
-    spark.kubernetes.executor.podNamePrefix=spark-test1
+    spark.kubernetes.executor.podNamePrefix={appname}
     spark.history.fs.logDirectory=hdfs\:///spark2-history/
     spark.kubernetes.submitInDriver=true
     spark.kubernetes.pyspark.pythonVersion=3
@@ -33,7 +33,7 @@ data:
     spark.kubernetes.container.image.pullPolicy=Always
     spark.driver.blockManager.port=7079
     spark.executor.memoryOverhead=1536m
-    spark.app.id=spark-appid-test1
+    spark.app.id={appid}
     spark.sql.warehouse.dir=hdfs\:///apps/hive/warehouse/
     spark.kubernetes.python.pyFiles=file\:///opt/spark/work-dir/data_pipeline.zip,file\:///opt/spark/work-dir/etlsdk.zip
     spark.eventLog.dir=hdfs\:///spark2-history/
@@ -48,13 +48,13 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: 2019-09-10T02:55:01Z
-  name: spark-appname-test1-conf-map
+  name: {appname}-conf-map
   namespace: dev
   ownerReferences:
   - apiVersion: v1
     controller: true
     kind: Pod
-    name: spark-appname-test1
+    name: {appname}
     uid: 22cf0221-d3a8-11e9-a205-00163e20c49c
   resourceVersion: "1542048"
-  selfLink: /api/v1/namespaces/dev/configmaps/spark-appname-test1-conf-map
+  selfLink: /api/v1/namespaces/dev/configmaps/{appname}-conf-map
