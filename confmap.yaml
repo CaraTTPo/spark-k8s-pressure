@@ -55,6 +55,6 @@ metadata:
     controller: true
     kind: Pod
     name: {appname}
-    uid: 22cf0221-d3a8-11e9-a205-00163e20c49c
+    uid: {uid}
   resourceVersion: "1542048"
   selfLink: /api/v1/namespaces/dev/configmaps/{appname}-conf-map

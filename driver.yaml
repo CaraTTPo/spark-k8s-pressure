@@ -29,7 +29,7 @@ spec:
     - name: PYSPARK_MAJOR_PYTHON_VERSION
       value: "3"
     - name: PYSPARK_APP_ARGS
-      value: data_pipeline.plugin_base.oss2hive.Oss2HivePlugin.run --config hdfs://apps/ETLPlatform/production/1711673/configs.json
+      value: {command} --config hdfs://tmp/ting.wu/k8s_press/{job_id}.json
     - name: PYSPARK_FILES
       value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
     - name: SPARK_CONF_DIR
@@ -49,10 +49,10 @@ spec:
       protocol: TCP
     resources:
       limits:
-        memory: 800Mi
+        memory: 1024Mi
       requests:
-        cpu: "0.2"
-        memory: 800Mi
+        cpu: "0.3"
+        memory: 1024Mi
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
