@@ -54,28 +54,31 @@ def generate_job_and_outputtable(schedules_list):
         owner = job_infos["owner"]
         print("schedule_url: "+schedule_url)
         for job_info in job_infos["execute_DAG"]:
-            if job_info.get("job_info") \
-                and job_info["job_info"]["configs"].get("command","") \
-                and job_info["job_info"]["configs"]["command"].startswith("data_pipeline") : #or job_info["job_info"]["configs"]["command"].startswith("data_connector")
-                config = job_info["job_info"]["configs"]
-                config['args']["isstreaming"] = str(config['args']["isStreaming"])
-                job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
-                for output in config["output"]:
-                    outtable_list.append(deepcopy(output))
-                    dayu_fullnames = output["dayu_fullname"].split(":")
-                    if not dayu_fullnames:
-                        raise Exception("error!!")
-                    if dayu_fullnames[0].lower() == "hive":
-                        dayu_fullnames[1] = "dayu_temp" 
-                        output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8s_press"
-                    elif dayu_fullnames[0].lower().startswith("oss"):
-                        output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8s_press/"
-                    else:
-                        output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
-                    output.pop("dayu_id")
-                content = json.dumps(config).encode(encoding='utf-8')
-                client.write("/tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]), overwrite=True, data=content)
-                print("  hdfs: /tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]))
+            try:
+                if job_info.get("job_info") \
+                    and job_info["job_info"]["configs"].get("command","") \
+                    and job_info["job_info"]["configs"]["command"].startswith("data_pipeline") : #or job_info["job_info"]["configs"]["command"].startswith("data_connector")
+                    config = job_info["job_info"]["configs"]
+                    config['args']["isstreaming"] = str(config['args']["isStreaming"])
+                    job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
+                    for output in config["output"]:
+                        outtable_list.append(deepcopy(output))
+                        dayu_fullnames = output["dayu_fullname"].split(":")
+                        if not dayu_fullnames:
+                            raise Exception("error!!")
+                        if dayu_fullnames[0].lower() == "hive":
+                            dayu_fullnames[1] = "dayu_temp" 
+                            output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8s_press"
+                        elif dayu_fullnames[0].lower().startswith("oss"):
+                            output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8s_press/"
+                        else:
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                        output.pop("dayu_id")
+                    content = json.dumps(config).encode(encoding='utf-8')
+                    client.write("/tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]), overwrite=True, data=content)
+                    print("  hdfs: /tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]))
+            except Exception as err:
+                print(err)
     return job_list, outtable_list
 
 def copy_job_output_dayu_table(outtable_list):
