@@ -6,7 +6,6 @@ metadata:
     spark-role: driver
   name: {appname}
   namespace: dev
-  resourceVersion: "1542244"
   selfLink: /api/v1/namespaces/dev/pods/{appname}
 spec:
   containers:

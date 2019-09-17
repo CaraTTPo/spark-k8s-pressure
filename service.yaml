@@ -10,7 +10,6 @@ metadata:
     kind: Pod
     name: {appname}
     uid: {uid}
-  resourceVersion: "1542046"
   selfLink: /api/v1/namespaces/dev/services/{appname}-svc
 spec:
   clusterIP: None
