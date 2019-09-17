@@ -12,7 +12,7 @@ import yaml
 from kubernetes import client, config
 
 
-def generate_work(num):
+def generate_work(num=None):
     url = "https://pony.aidigger.com/api/v1/works"
     res = requests.get(url)
     works = res.json()["data"]
@@ -20,7 +20,10 @@ def generate_work(num):
     for work in works[::-1]:
         if work["status"] == "RUNNING":
             work_ids.append(work['id'])
-    return work_ids[:num]
+    if num:
+        return work_ids[:num]
+    else:
+        return work_ids
 
 def generate_schedule(work_ids):
     schedules_list = []
@@ -102,6 +105,7 @@ def copy_job_output_dayu_table(outtable_list):
                 table_info['database']= 'dayu_temp'
                 table_info['name'] += "_k8s_press"
             elif table_info["storage"].lower() == "es":
+                table_info['name'] += '_k8s_press'
                 table_info['es_alias'] += '_k8s_press_tmp'
             elif table_info["storage"].lower() == "oss":
                 table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8s_press")
@@ -196,6 +200,8 @@ def save_and_clear_k8s(job_folder_name_map):
             os.makedirs("{}-{}".format(job_folder_name_map[job_id], status.lower()), exist_ok=True, mode=0o777)
             save_log(pod_name, job_folder_name_map[job_id], status.lower())
             save_yaml(pod.to_dict(), job_folder_name_map[job_id], status.lower())
+            if "exec" in pod_name:
+                continue
             v1.delete_namespaced_pod(pod_name, "dev")
             print("deleted pod {}".format(pod_name))
         else:
@@ -218,7 +224,7 @@ def list_running_job():
     pods = v1.list_namespaced_pod(namespace="dev").items
     count = 0
     for pod in pods:
-        if pod.metadata.to_dict()["name"].startswith("appname") and pod._status.to_dict()['phase'].lower() in ("pending", "running"):
+        if pod.metadata.to_dict()["name"].startswith("appname") and pod._status.to_dict()['phase'].lower() in ("pending", "running") and "exec" not in pod.metadata.to_dict()["name"]:
             count += 1
     print("running job {}".format(count))
     return count
@@ -302,7 +308,7 @@ def submit_job(job_list, index_start):
     return end
 
 def main():
-    limit = 15
+    limit = 0
     print("***"*10+"generate work id"+"***"*10)
     work_ids = generate_work(limit)
     print(len(work_ids))
