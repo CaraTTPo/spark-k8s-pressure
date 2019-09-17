@@ -138,29 +138,29 @@ def press_job_on_k8s(job_list):
         save_and_clear_k8s(job_folder_name_map)    
         index = submit_job(job_list, index)
         print("submitted")
-        if index == len(job_list)-1:
+        if index >= len(job_list) and not list_running_job():
             print("$$$$$$$$$$ press finished $$$$$$$$")
             break
-        time.sleep(30)
+        save_and_clear_k8s(job_folder_name_map)  
 
 def save_log(pod_name, folder_name, status):
-    os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
+    #os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
     log_url = "http://kube-sa.aipp.io/api/v1/log/file/dev/{}/spark-kubernetes-driver?previous=false".format(pod_name)
     log = requests.get(log_url).text
-    with open("history/{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
+    with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
         log_op.write(log)
-    print("save history/{}-{}/{}.log".format(folder_name, status, pod_name))
+    print("save {}-{}/{}.log".format(folder_name, status, pod_name))
 
 def save_yaml(yaml_dict, folder_name, status):
     config_yaml = open("{}-{}/{}.yaml".format(folder_name, status, yaml_dict['metadata']['name']),'w+')
-    yaml.dump(config_content, config_yaml)
+    yaml.dump(yaml_dict, config_yaml)
     config_yaml.close()
     print("save: {}-{}/{}.yaml".format(folder_name, status, yaml_dict['metadata']['name']))
 
 def append_log(pod_name, folder_name, status):
     log_url = "http://kube-sa.aipp.io/api/v1/log/dev/{}".format(pod_name)
     log = requests.get(log_url).text
-    with open("{}-{}/{}.log".format(folder_name, status, pod_name),'a') as log_op:
+    with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
         log_op.write(log)
     print("append history/{}-{}/{}.log".format(folder_name, status, pod_name))
 
@@ -191,20 +191,30 @@ def save_and_clear_k8s(job_folder_name_map):
             continue
         else:
             job_id = job_id_re[0]
+        
         if status.lower() in ("failed", "succeeded"):
+            os.makedirs("{}-{}".format(job_folder_name_map[job_id], status.lower()), exist_ok=True, mode=0o777)
             save_log(pod_name, job_folder_name_map[job_id], status.lower())
-            save_yaml(pod.to_dict(), job_folder_name_map[job_id])
+            save_yaml(pod.to_dict(), job_folder_name_map[job_id], status.lower())
             v1.delete_namespaced_pod(pod_name, "dev")
             print("deleted pod {}".format(pod_name))
         else:
+            os.makedirs("{}-{}".format(job_folder_name_map[job_id], "running"), exist_ok=True, mode=0o777)
             append_log(pod_name, job_folder_name_map[job_id], "running")
-            save_yaml(pod.to_dict(), job_folder_name_map[job_id])
+            save_yaml(pod.to_dict(), job_folder_name_map[job_id], "running")
             # pod_execs = list_pod_exec(pod_name)
             # for pod_exec in pod_execs:
             #     append_log(pod_exec_name, job_folder_name_map[job_id], "running")
             #     save_yaml(pod_exec.to_dict(), job_folder_name_map[job_id])
 
-def list_running_job(v1):
+def list_running_job():
+    config.load_kube_config('/root/.kube/config')
+    configuration = client.Configuration()
+    configuration = client.Configuration()
+    configuration.verify_ssl=False
+    configuration.debug = False
+    client.Configuration.set_default(configuration)
+    v1 = client.CoreV1Api()
     pods = v1.list_namespaced_pod(namespace="dev").items
     count = 0
     for pod in pods:
@@ -239,6 +249,12 @@ def get_pod_uid(job_id, time_stamp):
 
 def create_confmap_service(uid, job_info, time_stamp):
     job_id, job_name, command, mem, core,owner,cron_type = job_info
+    with open("confmap.yaml", 'r') as confmap_op:
+        confmap_tmplate = confmap_op.read()
+
+    with open("service.yaml", 'r') as service_op:
+        service_tmplate = service_op.read()
+
     confmap_yaml = confmap_tmplate.replace("{appname}", "appname{}-{}".format(job_id,time_stamp))
     confmap_yaml = confmap_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     confmap_yaml = confmap_yaml.replace("{uid}",uid)
@@ -253,12 +269,12 @@ def create_confmap_service(uid, job_info, time_stamp):
 def submit_confmap_service(v1):
     with open("press/confmap.yaml", "r") as op:
         confmap = yaml.load(op)
-    v1.create_namespaced_pod("dev", confmap)
+    v1.create_namespaced_config_map("dev", confmap)
     print("submit confmap: {}".format(confmap["metadata"]["name"]))
 
     with open("press/service.yaml", "r") as op:
         service = yaml.load(op)
-    v1.create_namespaced_pod("dev", service)
+    v1.create_namespaced_service("dev", service)
     print("submit service: {}".format(service["metadata"]["name"]))
 
 def submit_job(job_list, index_start):
@@ -269,7 +285,7 @@ def submit_job(job_list, index_start):
     configuration.debug = False
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
-    running_num = list_running_job(v1)
+    running_num = list_running_job()
     end = index_start+(10-running_num)
     if end>len(job_list):
         end = len(job_list)
@@ -283,24 +299,25 @@ def submit_job(job_list, index_start):
         uid = get_pod_uid(job_id, time_stamp)
         create_confmap_service(uid, job_info, time_stamp)
         submit_confmap_service(v1)
+    return end
 
 def main():
-    # limit = 5
-    # print("***"*10+"generate work id"+"***"*10)
-    # work_ids = generate_work(limit)
-    # print(len(work_ids))
-    # print("***"*10+"generate_schedule id"+"***"*10)
-    # schedules_list = generate_schedule(work_ids)
-    # print(len(schedules_list))
-    # print("***"*10+"generate_job_and_outputtable"+"***"*10)
-    # job_list, outtable_list = generate_job_and_outputtable(schedules_list)
-    # print("job_list: "+str(len(job_list)))
-    # print("outtable_list: "+str(len(outtable_list)))
-    # print("***"*10+"copy_job_output_dayu_table"+"***"*10)
-    # copy_job_output_dayu_table(outtable_list)
-    # print(job_list)
+    limit = 15
+    print("***"*10+"generate work id"+"***"*10)
+    work_ids = generate_work(limit)
+    print(len(work_ids))
+    print("***"*10+"generate_schedule id"+"***"*10)
+    schedules_list = generate_schedule(work_ids)
+    print(len(schedules_list))
+    print("***"*10+"generate_job_and_outputtable"+"***"*10)
+    job_list, outtable_list = generate_job_and_outputtable(schedules_list)
+    print("job_list: "+str(len(job_list)))
+    print("outtable_list: "+str(len(outtable_list)))
+    print("***"*10+"copy_job_output_dayu_table"+"***"*10)
+    copy_job_output_dayu_table(outtable_list)
+    print(job_list)
 
-    job_list = [(1725174, 'Hive2Hive', 'data_pipeline.plugin_base.data_transmit.DataTransmit.hive2hive', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725195, 'Hive2Socrates_1', 'data_pipeline.plugin_base.socrates_plugin.SocratesPlugin.hive2socrates', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725168, 'Oss2Parsed', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1720648, 'CommonParsedPlugin', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'herui', 'DAY'), (1717256, 'DayuES2Hive', 'data_pipeline.plugin_base.elasticsearch2hive_plugin.Elasticsearch2HivePlugin.run', '1G', '0.3', 'tulingfeng', 'DAY')]
+    #job_list = [(1725174, 'Hive2Hive', 'data_pipeline.plugin_base.data_transmit.DataTransmit.hive2hive', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725195, 'Hive2Socrates_1', 'data_pipeline.plugin_base.socrates_plugin.SocratesPlugin.hive2socrates', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725168, 'Oss2Parsed', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1720648, 'CommonParsedPlugin', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'herui', 'DAY'), (1717256, 'DayuES2Hive', 'data_pipeline.plugin_base.elasticsearch2hive_plugin.Elasticsearch2HivePlugin.run', '1G', '0.3', 'tulingfeng', 'DAY')]
     print("***"*10+"press_job_on_k8s"+"***"*10)
     press_job_on_k8s(job_list)
 

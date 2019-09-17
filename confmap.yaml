@@ -47,7 +47,6 @@ data:
     spark.yarn.historyServer.address=emr2-header-2.ipa.aidigger.com\:18081
 kind: ConfigMap
 metadata:
-  creationTimestamp: 2019-09-10T02:55:01Z
   name: {appname}-conf-map
   namespace: dev
   ownerReferences:
