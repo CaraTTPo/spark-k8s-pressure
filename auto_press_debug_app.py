@@ -59,8 +59,9 @@ def generate_job_and_outputtable(schedules_list):
                     and job_info["job_info"]["configs"].get("command","") \
                     and job_info["job_info"]["configs"]["command"].startswith("data_pipeline") : #or job_info["job_info"]["configs"]["command"].startswith("data_connector")
                     config = job_info["job_info"]["configs"]
-                    config['args']["isstreaming"] = str(config['args'].get("isStreaming") if config['args'].get("isStreaming") else config['args']["isstreaming"])
-                    config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
+                    if "args" in config.keys():
+                        config['args']["isstreaming"] = str(config['args']["isStreaming"] if "isStreaming" in config['args'].keys() else config['args']["isstreaming"])
+                        config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
                     job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
                     for output in config["output"]:
                         outtable_list.append(deepcopy(output))
@@ -198,9 +199,9 @@ def save_and_clear_k8s(job_folder_name_map):
         time.sleep(1)
         status = pod._status.to_dict()["phase"]
         pod_name = pod.metadata.to_dict()["name"]
-        if not pod_name.startswith("appname"):
+        if not pod_name.startswith("debugappname"):
             continue
-        job_id_re = re.search(r"appname(\d+)-", pod_name).groups()
+        job_id_re = re.search(r"debugappname(\d+)-", pod_name).groups()
         if not job_id_re:
             continue
         else:
@@ -234,7 +235,7 @@ def list_running_job():
     pods = v1.list_namespaced_pod(namespace="dev").items
     count = 0
     for pod in pods:
-        if pod.metadata.to_dict()["name"].startswith("appname") and pod._status.to_dict()['phase'].lower() in ("pending", "running") and "exec" not in pod.metadata.to_dict()["name"]:
+        if pod.metadata.to_dict()["name"].startswith("debugappname") and "exec" not in pod.metadata.to_dict()["name"]:
             count += 1
     print("running job {}".format(count))
     return count
@@ -243,7 +244,7 @@ def create_pod_yaml(job_info, time_stamp):
     with open("driver.yaml", 'r') as driver_op:
         driver_tmplate = driver_op.read()
     job_id, job_name, command, mem, core,owner,cron_type = job_info
-    driver_yaml = driver_tmplate.replace("{appname}", "appname{}-{}".format(job_id, time_stamp))
+    driver_yaml = driver_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{command}", "{}".format(command))
     driver_yaml = driver_yaml.replace("{job_id}", str(job_id))
@@ -258,7 +259,7 @@ def submit_pod(v1):
     print("submit pod: {}".format(driver_pod["metadata"]["name"]))
 
 def get_pod_uid(job_id, time_stamp):
-    url = "http://kube-sa.aipp.io/api/v1/_raw/pod/namespace/dev/name/appname{}-{}".format(job_id,time_stamp)
+    url = "http://kube-sa.aipp.io/api/v1/_raw/pod/namespace/dev/name/debugappname{}-{}".format(job_id,time_stamp)
     res = requests.get(url)
     uid = res.json()["metadata"]["uid"]
     return uid
@@ -271,12 +272,12 @@ def create_confmap_service(uid, job_info, time_stamp):
     with open("service.yaml", 'r') as service_op:
         service_tmplate = service_op.read()
 
-    confmap_yaml = confmap_tmplate.replace("{appname}", "appname{}-{}".format(job_id,time_stamp))
+    confmap_yaml = confmap_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
     confmap_yaml = confmap_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     confmap_yaml = confmap_yaml.replace("{uid}",uid)
     with open("press/confmap.yaml","w+") as op:
         op.write(confmap_yaml)
-    service_yaml = service_tmplate.replace("{appname}", "appname{}-{}".format(job_id,time_stamp))
+    service_yaml = service_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
     service_yaml = service_yaml.replace("{appid}", "appid{}-{}".format(job_id,time_stamp))
     service_yaml = service_yaml.replace("{uid}",uid)
     with open("press/service.yaml","w+") as op:
