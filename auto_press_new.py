@@ -59,7 +59,9 @@ def generate_job_and_outputtable(schedules_list):
                     and job_info["job_info"]["configs"].get("command","") \
                     and job_info["job_info"]["configs"]["command"].startswith("data_pipeline") : #or job_info["job_info"]["configs"]["command"].startswith("data_connector")
                     config = job_info["job_info"]["configs"]
-                    config['args']["isstreaming"] = str(config['args']["isStreaming"])
+                    if configs.get("args"):
+                        config['args']["isstreaming"] = str(config['args']["isStreaming"] if "isStreaming" in config['args'].keys() else config['args']["isstreaming"])
+                        config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
                     job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
                     for output in config["output"]:
                         outtable_list.append(deepcopy(output))
@@ -71,6 +73,9 @@ def generate_job_and_outputtable(schedules_list):
                             output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8s_press"
                         elif dayu_fullnames[0].lower().startswith("oss"):
                             output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8s_press/"
+                        elif dayu_fullnames[0].lower().startswith("kafka"):
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                            output["dayu_full_name"] = output["dayu_full_name"].replace(".", "_")
                         else:
                             output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
                         output.pop("dayu_id")
@@ -109,11 +114,14 @@ def copy_job_output_dayu_table(outtable_list):
                 table_info['name'] += "_k8s_press"
             elif table_info["storage"].lower() == "es":
                 table_info['name'] += '_k8s_press'
-                table_info['es_alias'] += '_k8s_press_tmp'
+                table_info['es_alias'] = table_info['name']+'_tmp'
             elif table_info["storage"].lower() == "oss":
                 table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8s_press")
                 table_info['name'] = table_info['name'][:-1]+"_k8s_press/"
                 table_info['first_prefix'] += "_k8s_press" 
+            elif table_info["storage"].lower() == "kafka":
+                table_info['name'] = table_info['name']+"_k8s_press"
+                table_info['name'] = table_info['name'].replace(".", "_")
             else:
                 table_info['name'] += "_k8s_press"
             table_info['lifecycle']= -1
@@ -227,7 +235,7 @@ def list_running_job():
     pods = v1.list_namespaced_pod(namespace="dev").items
     count = 0
     for pod in pods:
-        if pod.metadata.to_dict()["name"].startswith("appname") and pod._status.to_dict()['phase'].lower() in ("pending", "running") and "exec" not in pod.metadata.to_dict()["name"]:
+        if pod.metadata.to_dict()["name"].startswith("appname") and "exec" not in pod.metadata.to_dict()["name"]:
             count += 1
     print("running job {}".format(count))
     return count
@@ -295,7 +303,7 @@ def submit_job(job_list, index_start):
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
     running_num = list_running_job()
-    end = index_start+(10-running_num)
+    end = index_start+(5-running_num)
     if end>len(job_list):
         end = len(job_list)
     print("submitting index: from {} to {}".format(index_start, end))
