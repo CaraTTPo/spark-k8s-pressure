@@ -27,7 +27,7 @@ data:
     spark.history.fs.logDirectory=hdfs\:///spark2-history/
     spark.kubernetes.submitInDriver=true
     spark.kubernetes.pyspark.pythonVersion=3
-    spark.kubernetes.memoryOverheadFactor=0.4
+    spark.kubernetes.memoryOverheadFactor=0.2
     spark.app.name=data_pipeline
     spark.eventLog.enabled=true
     spark.kubernetes.container.image.pullPolicy=Always

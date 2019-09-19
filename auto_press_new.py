@@ -34,8 +34,7 @@ def generate_schedule(work_ids):
             schedules = schedules['data']
         else:
             continue
-        time.sleep(1)
-        for schedule in schedules:
+        for schedule in schedules[::-1]:
             if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
                 schedules_list.append((schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 print((schedule["work_id"], schedule["id"], schedule["cron_type"]))
@@ -50,7 +49,6 @@ def generate_job_and_outputtable(schedules_list):
     for work_id, schedule_id, cron_type in schedules_list:
         schedule_url = "https://pony.aidigger.com/api/v1/schedules/{}".format(schedule_id)
         job_infos = requests.get(schedule_url).json()["data"]
-        time.sleep(1)
         owner = job_infos["owner"]
         print("schedule_url: "+schedule_url)
         for job_info in job_infos["execute_DAG"]:
@@ -59,10 +57,11 @@ def generate_job_and_outputtable(schedules_list):
                     and job_info["job_info"]["configs"].get("command","") \
                     and job_info["job_info"]["configs"]["command"].startswith("data_pipeline") : #or job_info["job_info"]["configs"]["command"].startswith("data_connector")
                     config = job_info["job_info"]["configs"]
-                    if configs.get("args"):
+                    if config.get("args"):
                         config['args']["isstreaming"] = str(config['args']["isStreaming"] if "isStreaming" in config['args'].keys() else config['args']["isstreaming"])
                         config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
-                    job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
+                        config['args'].pop("KafkaCheckpoint", None)
+                    job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1536M", "0.3", owner, cron_type))
                     for output in config["output"]:
                         outtable_list.append(deepcopy(output))
                         dayu_fullnames = output["dayu_fullname"].split(":")
@@ -70,14 +69,14 @@ def generate_job_and_outputtable(schedules_list):
                             raise Exception("error!!")
                         if dayu_fullnames[0].lower() == "hive":
                             dayu_fullnames[1] = "dayu_temp" 
-                            output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8s_press"
+                            output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8spre"
                         elif dayu_fullnames[0].lower().startswith("oss"):
-                            output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8s_press/"
+                            output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8spre/"
                         elif dayu_fullnames[0].lower().startswith("kafka"):
-                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8spre"
                             output["dayu_full_name"] = output["dayu_full_name"].replace(".", "_")
                         else:
-                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8spre"
                         output.pop("dayu_id")
                     content = json.dumps(config).encode(encoding='utf-8')
                     client.write("/tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]), overwrite=True, data=content)
@@ -89,7 +88,6 @@ def generate_job_and_outputtable(schedules_list):
 def copy_job_output_dayu_table(outtable_list):
     failed_table = {}
     for outtable in outtable_list:
-        time.sleep(1)
         try:
             table_info = requests.get("https://dayu.aidigger.com/api/v2/tables/{}".format(outtable["dayu_id"])).json()
             table_info.pop("created_at", None)
@@ -111,19 +109,19 @@ def copy_job_output_dayu_table(outtable_list):
             table_info['owl_id']= 548279
             if table_info["storage"].lower() == "hive":
                 table_info['database']= 'dayu_temp'
-                table_info['name'] += "_k8s_press"
+                table_info['name'] += "_k8spre"
             elif table_info["storage"].lower() == "es":
-                table_info['name'] += '_k8s_press'
+                table_info['name'] += '_k8spre'
                 table_info['es_alias'] = table_info['name']+'_tmp'
             elif table_info["storage"].lower() == "oss":
-                table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8s_press")
-                table_info['name'] = table_info['name'][:-1]+"_k8s_press/"
-                table_info['first_prefix'] += "_k8s_press" 
+                table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8spre")
+                table_info['name'] = table_info['name'][:-1]+"_k8spre/"
+                table_info['first_prefix'] += "_k8spre" 
             elif table_info["storage"].lower() == "kafka":
-                table_info['name'] = table_info['name']+"_k8s_press"
+                table_info['name'] = table_info['name']+"_k8spre"
                 table_info['name'] = table_info['name'].replace(".", "_")
             else:
-                table_info['name'] += "_k8s_press"
+                table_info['name'] += "_k8spre"
             table_info['lifecycle']= -1
             table_info['owner']= '吴婷'
             table_info['alias'] = 'spark on k8s 压测临时表'
