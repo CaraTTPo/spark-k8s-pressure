@@ -37,7 +37,7 @@ def generate_schedule(work_ids):
         time.sleep(1)
         for schedule in schedules:
             if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
-                schedules_list.append((schedule["work_id"], schedule["id"], schedule["cron_type"]))
+                schedules_list.append(( schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 print((schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 break
     return schedules_list
@@ -62,7 +62,7 @@ def generate_job_and_outputtable(schedules_list):
                     if "args" in config.keys():
                         config['args']["isstreaming"] = str(config['args']["isStreaming"] if "isStreaming" in config['args'].keys() else config['args']["isstreaming"])
                         config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
-                    job_list.append((config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
+                    job_list.append((work_id,config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
                     for output in config["output"]:
                         outtable_list.append(deepcopy(output))
                         dayu_fullnames = output["dayu_fullname"].split(":")
@@ -181,8 +181,8 @@ def append_log(pod_name, folder_name, status):
 
 def generate_job_folder_name_map(job_list):
     job_folder_name_map = {}
-    for job_id, job_name, command, mem, core,owner,cron_type in job_list:
-        folder_name = "debug/{}-{}-{}-{}".format(job_name, owner, job_id, cron_type)
+    for work_id,job_id, job_name, command, mem, core,owner,cron_type in job_list:
+        folder_name = "debug/{}-{}-{}-{}-{}".format(work_id, job_name, owner, job_id, cron_type)
         job_folder_name_map[str(job_id)] = folder_name
     return job_folder_name_map 
 
@@ -243,7 +243,7 @@ def list_running_job():
 def create_pod_yaml(job_info, time_stamp):
     with open("driver.yaml", 'r') as driver_op:
         driver_tmplate = driver_op.read()
-    job_id, job_name, command, mem, core,owner,cron_type = job_info
+    work_id, job_id, job_name, command, mem, core,owner,cron_type = job_info
     driver_yaml = driver_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{command}", "{}".format(command))
@@ -265,7 +265,7 @@ def get_pod_uid(job_id, time_stamp):
     return uid
 
 def create_confmap_service(uid, job_info, time_stamp):
-    job_id, job_name, command, mem, core,owner,cron_type = job_info
+    work_id, job_id, job_name, command, mem, core,owner,cron_type = job_info
     with open("confmap.yaml", 'r') as confmap_op:
         confmap_tmplate = confmap_op.read()
 
@@ -308,11 +308,11 @@ def submit_job(job_list, index_start):
         end = len(job_list)
     print("submitting index: from {} to {}".format(index_start, end))
     for job_info in job_list[index_start: end]:
-        time.sleep(2)
         time_stamp = int(time.time())
         create_pod_yaml(job_info, time_stamp)
         submit_pod(v1) 
-        job_id = str(job_info[0])
+        job_id = str(job_info[1])
+        time.sleep(2) 
         uid = get_pod_uid(job_id, time_stamp)
         create_confmap_service(uid, job_info, time_stamp)
         submit_confmap_service(v1)
