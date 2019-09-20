@@ -70,14 +70,14 @@ def generate_job_and_outputtable(schedules_list):
                             raise Exception("error!!")
                         if dayu_fullnames[0].lower() == "hive":
                             dayu_fullnames[1] = "dayu_temp" 
-                            output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8s_press"
+                            output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8spre"
                         elif dayu_fullnames[0].lower().startswith("oss"):
-                            output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8s_press/"
+                            output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8spre/"
                         elif dayu_fullnames[0].lower().startswith("kafka"):
-                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8spre"
                             output["dayu_full_name"] = output["dayu_full_name"].replace(".", "_")
                         else:
-                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8s_press"
+                            output["dayu_full_name"] = output["dayu_fullname"]+"_k8spre"
                         output.pop("dayu_id")
                     content = json.dumps(config).encode(encoding='utf-8')
                     client.write("/tmp/ting.wu/k8s_press/{}.json".format(config["job_id"]), overwrite=True, data=content)
@@ -111,19 +111,19 @@ def copy_job_output_dayu_table(outtable_list):
             table_info['owl_id']= 548279
             if table_info["storage"].lower() == "hive":
                 table_info['database']= 'dayu_temp'
-                table_info['name'] += "_k8s_press"
+                table_info['name'] += "_k8spre"
             elif table_info["storage"].lower() == "es":
-                table_info['name'] += '_k8s_press'
+                table_info['name'] += '_k8spre'
                 table_info['es_alias'] = table_info['name']+'_tmp'
             elif table_info["storage"].lower() == "oss":
-                table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8s_press")
-                table_info['name'] = table_info['name'][:-1]+"_k8s_press/"
-                table_info['first_prefix'] += "_k8s_press" 
+                table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8spre")
+                table_info['name'] = table_info['name'][:-1]+"_k8spre/"
+                table_info['first_prefix'] += "_k8spre" 
             elif table_info["storage"].lower() == "kafka":
-                table_info['name'] = table_info['name']+"_k8s_press"
+                table_info['name'] = table_info['name']+"_k8spre"
                 table_info['name'] = table_info['name'].replace(".", "_")
             else:
-                table_info['name'] += "_k8s_press"
+                table_info['name'] += "_k8spre"
             table_info['lifecycle']= -1
             table_info['owner']= '吴婷'
             table_info['alias'] = 'spark on k8s 压测临时表'
@@ -207,6 +207,8 @@ def save_and_clear_k8s(job_folder_name_map):
         else:
             job_id = job_id_re[0]
         
+        if job_id not in job_folder_name_map.keys():
+            continue
         if status.lower() in ("failed", "succeeded"):
             os.makedirs("{}-{}".format(job_folder_name_map[job_id], status.lower()), exist_ok=True, mode=0o777)
             save_log(pod_name, job_folder_name_map[job_id], status.lower())
