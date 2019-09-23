@@ -29,8 +29,8 @@ spec:
       value: "3"
     - name: PYSPARK_APP_ARGS
       value: {command} --config hdfs://tmp/ting.wu/k8s_press/{job_id}.json
-    - name: PYSPARK_FILES
-      value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
+    #- name: PYSPARK_FILES
+    #  value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
     - name: SPARK_CONF_DIR
       value: /opt/spark/conf
     image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:test
