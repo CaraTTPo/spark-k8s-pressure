@@ -14,13 +14,13 @@ data:
     spark.master=k8s\://https\://api.k8s.aipp.io\:6443
     spark.history.kerberos.keytab=none
     spark.kubernetes.driver.pod.name={appname}
-    spark.driver.host={appname}-svc.spark-dev.svc
+    spark.driver.host={appname}-svc.{namespace}.svc
     spark.history.ui.port=18081
     spark.driver.extraLibraryPath=/usr/hdp/current/hadoop-client/lib/native\:/usr/hdp/current/hadoop-client/lib/native/Linux-amd64-64
     spark.shuffle.io.preferDirectBufs=false
     spark.submit.deployMode=cluster
     spark.executor.extraJavaOptions=-XX\:MaxDirectMemorySize\=512m
-    spark.kubernetes.authenticate.driver.serviceAccountName=spark
+    spark.kubernetes.authenticate.driver.serviceAccountName={service-account-name}
     spark.kubernetes.executor.podNamePrefix={appname}
     spark.history.fs.logDirectory=hdfs\:///spark2-history/
     spark.kubernetes.submitInDriver=true
@@ -34,20 +34,20 @@ data:
     spark.app.id={appid}
     spark.sql.warehouse.dir=hdfs\:///apps/hive/warehouse/
     spark.eventLog.dir=hdfs\:///spark2-history/
-    spark.kubernetes.container.image.pullSecrets=aliyun-registry
+    spark.kubernetes.container.image.pullSecrets={image-pull-secrets}
     spark.driver.extraClassPath=/etc/spark2/conf
     spark.history.kerberos.principal=none
-    spark.kubernetes.namespace=spark-dev
+    spark.kubernetes.namespace={namespace}
     spark.executor.instances=1
     spark.jars=hdfs\://emr2-header-1.ipa.aidigger.com\:8020/spark_jars/etlsdk/prod/mysql.jar
 kind: ConfigMap
 metadata:
   name: {appname}-conf-map
-  namespace: spark-dev
+  namespace: {namespace}
   ownerReferences:
   - apiVersion: v1
     controller: true
     kind: Pod
     name: {appname}
     uid: {uid}
-  selfLink: /api/v1/namespaces/spark-dev/configmaps/{appname}-conf-map
+  selfLink: /api/v1/namespaces/{namespace}/configmaps/{appname}-conf-map

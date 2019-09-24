@@ -5,8 +5,8 @@ metadata:
     spark-app-selector: {appid}
     spark-role: driver
   name: {appname}
-  namespace: spark-dev
-  selfLink: /api/v1/namespaces/spark-dev/pods/{appname}
+  namespace: {namespace}
+  selfLink: /api/v1/namespaces/{namespace}/pods/{appname}
 spec:
   containers:
   - args:
@@ -29,12 +29,10 @@ spec:
       value: "3"
     - name: PYSPARK_APP_ARGS
       value: {command} --config hdfs://tmp/ting.wu/k8s_press/{job_id}.json
-    #- name: PYSPARK_FILES
-    #  value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
     - name: SPARK_CONF_DIR
       value: /opt/spark/conf
     image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:spark-dev-test
-    imagePullPolicy: Always #IfNotPresent
+    imagePullPolicy: Always 
     name: spark-kubernetes-driver
     ports:
     - containerPort: 7078
@@ -52,7 +50,7 @@ spec:
       requests:
         cpu: "1"
         memory: 1538Mi
-    terminationMessagePath: /spark-dev/termination-log
+    terminationMessagePath: /{namespace}/termination-log
     terminationMessagePolicy: File
     volumeMounts:
     - mountPath: /var/data/spark-58c2dd88-e4d2-4f16-9381-531937827f9e
@@ -60,20 +58,20 @@ spec:
     - mountPath: /opt/spark/conf
       name: spark-conf-volume
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: spark-token-k7l88
+      name: {service-account-token}
       readOnly: true
   dnsPolicy: ClusterFirst
   imagePullSecrets:
-  - name: aliyun-registry
+  - name: {image-pull-secrets}
   restartPolicy: Never
   schedulerName: default-scheduler
   securityContext: {}
-  serviceAccount: spark
-  serviceAccountName: spark
+  serviceAccount: {service-account-name}
+  serviceAccountName: {service-account-name}
   terminationGracePeriodSeconds: 30
   nodeSelector:
-    role: spark
-    env: spark-dev
+    role: {service-account-name}
+    env: {namespace}
   tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/not-ready
@@ -90,7 +88,7 @@ spec:
       defaultMode: 420
       name: {appname}-conf-map
     name: spark-conf-volume
-  - name: spark-token-k7l88
+  - name: {service-account-token}
     secret:
       defaultMode: 420
-      secretName: spark-token-k7l88
+      secretName: {service-account-token}

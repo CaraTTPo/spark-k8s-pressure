@@ -2,14 +2,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {appname}-svc
-  namespace: spark-dev
+  namespace: {namespace}
   ownerReferences:
   - apiVersion: v1
     controller: true
     kind: Pod
     name: {appname}
     uid: {uid}
-  selfLink: /api/v1/namespaces/spark-dev/services/{appname}-svc
+  selfLink: /api/v1/namespaces/{namespace}/services/{appname}-svc
 spec:
   clusterIP: None
   ports:
