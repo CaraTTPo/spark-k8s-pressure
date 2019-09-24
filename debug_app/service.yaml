@@ -26,7 +26,7 @@ spec:
     protocol: TCP
     targetPort: 4040
   selector:
-    spark-app-selector: {appid}
+    spark-app-selector: {appname}
     spark-role: driver
   sessionAffinity: None
   type: ClusterIP

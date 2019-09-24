@@ -36,12 +36,12 @@ def generate_schedule(work_ids):
             continue
         time.sleep(1)
         for schedule in schedules:
-            if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
+                #if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
                 schedules_list.append(( schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 print((schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 break
     return schedules_list
-    
+
 
 def generate_job_and_outputtable(schedules_list):
     job_list = []
@@ -69,7 +69,7 @@ def generate_job_and_outputtable(schedules_list):
                         if not dayu_fullnames:
                             raise Exception("error!!")
                         if dayu_fullnames[0].lower() == "hive":
-                            dayu_fullnames[1] = "dayu_temp" 
+                            dayu_fullnames[1] = "dayu_temp"
                             output["dayu_full_name"] = ":".join(dayu_fullnames)+"_k8spre"
                         elif dayu_fullnames[0].lower().startswith("oss"):
                             output["dayu_full_name"] = output["dayu_fullname"][:-1]+"_k8spre/"
@@ -105,8 +105,8 @@ def copy_job_output_dayu_table(outtable_list):
             table_info.pop("data_type", None)
             table_info.pop("project", None)
             table_info.pop("data_managers", None)
-            table_info.pop("project_id", None) 
-            table_info.pop("es_alias", None) 
+            table_info.pop("project_id", None)
+            table_info.pop("es_alias", None)
             table_info['is_temp']= True
             table_info['owl_id']= 548279
             if table_info["storage"].lower() == "hive":
@@ -118,7 +118,7 @@ def copy_job_output_dayu_table(outtable_list):
             elif table_info["storage"].lower() == "oss":
                 table_info["prefix_pattern"] = table_info["prefix_pattern"].replace(table_info['first_prefix'], table_info['first_prefix']+"_k8spre")
                 table_info['name'] = table_info['name'][:-1]+"_k8spre/"
-                table_info['first_prefix'] += "_k8spre" 
+                table_info['first_prefix'] += "_k8spre"
             elif table_info["storage"].lower() == "kafka":
                 table_info['name'] = table_info['name']+"_k8spre"
                 table_info['name'] = table_info['name'].replace(".", "_")
@@ -150,17 +150,17 @@ def press_job_on_k8s(job_list):
     index = 0
     job_folder_name_map = generate_job_folder_name_map(job_list)
     while True:
-        save_and_clear_k8s(job_folder_name_map)    
+        save_and_clear_k8s(job_folder_name_map)
         index = submit_job(job_list, index)
         print("submitted")
         if index >= len(job_list) and not list_running_job():
             print("$$$$$$$$$$ press finished $$$$$$$$")
             break
-        save_and_clear_k8s(job_folder_name_map)  
+        save_and_clear_k8s(job_folder_name_map)
 
 def save_log(pod_name, folder_name, status):
     #os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
-    log_url = "http://kube-sa.aipp.io/api/v1/log/file/dev/{}/spark-kubernetes-driver?previous=false".format(pod_name)
+    log_url = "http://k8s.aipp.io/api/v1/log/file/spark-dev/{}/spark-kubernetes-driver?previous=false".format(pod_name)
     log = requests.get(log_url).text
     with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
         log_op.write(log)
@@ -173,7 +173,7 @@ def save_yaml(yaml_dict, folder_name, status):
     print("save: {}-{}/{}.yaml".format(folder_name, status, yaml_dict['metadata']['name']))
 
 def append_log(pod_name, folder_name, status):
-    log_url = "http://kube-sa.aipp.io/api/v1/log/dev/{}".format(pod_name)
+    log_url = "http://k8s.aipp.io/api/v1/log/spark-dev/{}".format(pod_name)
     log = requests.get(log_url).text
     with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
         log_op.write(log)
@@ -184,17 +184,17 @@ def generate_job_folder_name_map(job_list):
     for work_id,job_id, job_name, command, mem, core,owner,cron_type in job_list:
         folder_name = "debug/{}-{}-{}-{}-{}".format(work_id, job_name, owner, job_id, cron_type)
         job_folder_name_map[str(job_id)] = folder_name
-    return job_folder_name_map 
+    return job_folder_name_map
 
 def save_and_clear_k8s(job_folder_name_map):
-    config.load_kube_config('/root/.kube/config')
+    config.load_kube_config('/home/ting.wu/.kube/config')
     configuration = client.Configuration()
     configuration = client.Configuration()
     configuration.verify_ssl=False
     configuration.debug = False
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
-    pods = v1.list_namespaced_pod(namespace="dev").items
+    pods = v1.list_namespaced_pod(namespace="spark-dev").items
     for pod in pods:
         time.sleep(1)
         status = pod._status.to_dict()["phase"]
@@ -206,7 +206,7 @@ def save_and_clear_k8s(job_folder_name_map):
             continue
         else:
             job_id = job_id_re[0]
-        
+
         if job_id not in job_folder_name_map.keys():
             continue
         if status.lower() in ("failed", "succeeded"):
@@ -215,7 +215,7 @@ def save_and_clear_k8s(job_folder_name_map):
             save_yaml(pod.to_dict(), job_folder_name_map[job_id], status.lower())
             if "exec" in pod_name:
                 continue
-            v1.delete_namespaced_pod(pod_name, "dev")
+            #v1.delete_namespaced_pod(pod_name, "spark-dev")
             print("deleted pod {}".format(pod_name))
         else:
             os.makedirs("{}-{}".format(job_folder_name_map[job_id], "running"), exist_ok=True, mode=0o777)
@@ -227,17 +227,19 @@ def save_and_clear_k8s(job_folder_name_map):
             #     save_yaml(pod_exec.to_dict(), job_folder_name_map[job_id])
 
 def list_running_job():
-    config.load_kube_config('/root/.kube/config')
+    config.load_kube_config('/home/ting.wu/.kube/config')
     configuration = client.Configuration()
     configuration = client.Configuration()
     configuration.verify_ssl=False
     configuration.debug = False
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
-    pods = v1.list_namespaced_pod(namespace="dev").items
+    pods = v1.list_namespaced_pod(namespace="spark-dev").items
     count = 0
     for pod in pods:
-        if pod.metadata.to_dict()["name"].startswith("debugappname") and "exec" not in pod.metadata.to_dict()["name"]:
+        if pod.metadata.to_dict()["name"].startswith("debugappname") \
+            and "exec" not in pod.metadata.to_dict()["name"] \
+            and pod._status.to_dict()["phase"] not in ("Failed", "Succeeded"):
             count += 1
     print("running job {}".format(count))
     return count
@@ -247,7 +249,7 @@ def create_pod_yaml(job_info, time_stamp):
         driver_tmplate = driver_op.read()
     work_id, job_id, job_name, command, mem, core,owner,cron_type = job_info
     driver_yaml = driver_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id, time_stamp))
-    driver_yaml = driver_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
+    driver_yaml = driver_yaml.replace("{appname}", "appid{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{command}", "{}".format(command))
     driver_yaml = driver_yaml.replace("{job_id}", str(job_id))
     with open("press/driver.yaml","w+") as op:
@@ -257,11 +259,11 @@ def create_pod_yaml(job_info, time_stamp):
 def submit_pod(v1):
     with open("press/driver.yaml", "r") as op:
         driver_pod = yaml.load(op)
-    v1.create_namespaced_pod("dev", driver_pod)
+    v1.create_namespaced_pod("spark-dev", driver_pod)
     print("submit pod: {}".format(driver_pod["metadata"]["name"]))
 
 def get_pod_uid(job_id, time_stamp):
-    url = "http://kube-sa.aipp.io/api/v1/_raw/pod/namespace/dev/name/debugappname{}-{}".format(job_id,time_stamp)
+    url = "http://k8s.aipp.io/api/v1/_raw/pod/namespace/spark-dev/name/debugappname{}-{}".format(job_id,time_stamp)
     res = requests.get(url)
     uid = res.json()["metadata"]["uid"]
     return uid
@@ -275,12 +277,12 @@ def create_confmap_service(uid, job_info, time_stamp):
         service_tmplate = service_op.read()
 
     confmap_yaml = confmap_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
-    confmap_yaml = confmap_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
+    confmap_yaml = confmap_yaml.replace("{appname}", "appid{}-{}".format(job_id, time_stamp))
     confmap_yaml = confmap_yaml.replace("{uid}",uid)
     with open("press/confmap.yaml","w+") as op:
         op.write(confmap_yaml)
     service_yaml = service_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
-    service_yaml = service_yaml.replace("{appid}", "appid{}-{}".format(job_id,time_stamp))
+    service_yaml = service_yaml.replace("{appname}", "appid{}-{}".format(job_id,time_stamp))
     service_yaml = service_yaml.replace("{uid}",uid)
     with open("press/service.yaml","w+") as op:
         op.write(service_yaml)
@@ -288,16 +290,16 @@ def create_confmap_service(uid, job_info, time_stamp):
 def submit_confmap_service(v1):
     with open("press/confmap.yaml", "r") as op:
         confmap = yaml.load(op)
-    v1.create_namespaced_config_map("dev", confmap)
+    v1.create_namespaced_config_map("spark-dev", confmap)
     print("submit confmap: {}".format(confmap["metadata"]["name"]))
 
     with open("press/service.yaml", "r") as op:
         service = yaml.load(op)
-    v1.create_namespaced_service("dev", service)
+    v1.create_namespaced_service("spark-dev", service)
     print("submit service: {}".format(service["metadata"]["name"]))
 
 def submit_job(job_list, index_start):
-    config.load_kube_config('/root/.kube/config')
+    config.load_kube_config('/home/ting.wu/.kube/config')
     configuration = client.Configuration()
     configuration = client.Configuration()
     configuration.verify_ssl=False
@@ -312,9 +314,9 @@ def submit_job(job_list, index_start):
     for job_info in job_list[index_start: end]:
         time_stamp = int(time.time())
         create_pod_yaml(job_info, time_stamp)
-        submit_pod(v1) 
+        submit_pod(v1)
         job_id = str(job_info[1])
-        time.sleep(2) 
+        time.sleep(2)
         uid = get_pod_uid(job_id, time_stamp)
         create_confmap_service(uid, job_info, time_stamp)
         submit_confmap_service(v1)

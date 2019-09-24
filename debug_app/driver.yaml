@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    spark-app-selector: {appid}
+    spark-app-selector: {appname}
     spark-role: driver
   name: {appname}
   namespace: spark-dev

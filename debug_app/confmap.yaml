@@ -31,7 +31,7 @@ data:
     spark.kubernetes.container.image.pullPolicy=Always
     spark.driver.blockManager.port=7079
     spark.executor.memoryOverhead=1536m
-    spark.app.id={appid}
+    spark.app.id={appname}
     spark.sql.warehouse.dir=hdfs\:///apps/hive/warehouse/
     spark.eventLog.dir=hdfs\:///spark2-history/
     spark.kubernetes.container.image.pullSecrets=aliyun-registry
