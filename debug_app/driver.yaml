@@ -33,7 +33,7 @@ spec:
     #  value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
     - name: SPARK_CONF_DIR
       value: /opt/spark/conf
-    image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:test
+    image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:master
     imagePullPolicy: Always #IfNotPresent
     name: spark-kubernetes-driver
     ports:
@@ -71,8 +71,8 @@ spec:
   serviceAccount: spark
   serviceAccountName: spark
   terminationGracePeriodSeconds: 30
-  nodeSelector:
-    role: spark-test
+  #nodeSelector:
+  #  role: spark-test
   tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/not-ready

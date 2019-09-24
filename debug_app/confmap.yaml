@@ -10,7 +10,7 @@ data:
     spark.ui.enabled=true
     spark.files=hdfs\:///user/hadoop/etlsdk/run.py
     spark.history.provider=org.apache.spark.deploy.history.FsHistoryProvider
-    spark.kubernetes.container.image=registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline\:test
+    spark.kubernetes.container.image=registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline\:master
     spark.master=k8s\://https\://api.k8s.aipp.io\:6443
     spark.history.kerberos.keytab=none
     spark.kubernetes.driver.pod.name={appname}
