@@ -46,10 +46,10 @@ spec:
       protocol: TCP
     resources:
       limits:
-        memory: 1538Mi
+        memory: {driver_memory}
       requests:
-        cpu: "1"
-        memory: 1538Mi
+        cpu: {driver_cpu}
+        memory: {driver_memory}
     terminationMessagePath: /{namespace}/termination-log
     terminationMessagePolicy: File
     volumeMounts:

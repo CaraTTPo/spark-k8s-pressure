@@ -216,7 +216,7 @@ def save_and_clear_k8s(job_folder_name_map):
             if "exec" in pod_name:
                 continue
             #v1.delete_namespaced_pod(pod_name, "spark-dev")
-            print("deleted pod {}".format(pod_name))
+            #print("deleted pod {}".format(pod_name))
         else:
             os.makedirs("{}-{}".format(job_folder_name_map[job_id], "running"), exist_ok=True, mode=0o777)
             append_log(pod_name, job_folder_name_map[job_id], "running")
