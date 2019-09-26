@@ -1,15 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {appname}-svc
+  creationTimestamp: "2019-09-25T11:43:29Z"
+  name: data-pipeline-test-1569411807621-driver-svc
   namespace: spark-dev
   ownerReferences:
   - apiVersion: v1
     controller: true
     kind: Pod
-    name: {appname}
-    uid: {uid}
-  selfLink: /api/v1/namespaces/spark-dev/services/{appname}-svc
+    name: data-pipeline-test-1569411807621-driver
+    uid: b1a1eec3-df89-11e9-96d8-00163f009e2e
+  resourceVersion: "172170857"
+  selfLink: /api/v1/namespaces/spark-dev/services/data-pipeline-test-1569411807621-driver-svc
+  uid: b1dd644b-df89-11e9-96d8-00163f009e2e
 spec:
   clusterIP: None
   ports:
@@ -21,12 +24,8 @@ spec:
     port: 7079
     protocol: TCP
     targetPort: 7079
-  - name: spark-ui
-    port: 4040
-    protocol: TCP
-    targetPort: 4040
   selector:
-    spark-app-selector: {appid}
+    spark-app-selector: spark-b5bf94ba63bc4d1380a414eb759ea99b
     spark-role: driver
   sessionAffinity: None
   type: ClusterIP

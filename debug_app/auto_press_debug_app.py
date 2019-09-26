@@ -36,7 +36,7 @@ def generate_schedule(work_ids):
             continue
         time.sleep(1)
         for schedule in schedules:
-                #if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
+            if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
                 schedules_list.append(( schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 print((schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 break
@@ -195,6 +195,7 @@ def save_and_clear_k8s(job_folder_name_map):
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
     pods = v1.list_namespaced_pod(namespace="spark-dev").items
+    pods = []
     for pod in pods:
         time.sleep(1)
         status = pod._status.to_dict()["phase"]
@@ -249,7 +250,7 @@ def create_pod_yaml(job_info, time_stamp):
         driver_tmplate = driver_op.read()
     work_id, job_id, job_name, command, mem, core,owner,cron_type = job_info
     driver_yaml = driver_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id, time_stamp))
-    driver_yaml = driver_yaml.replace("{appname}", "appid{}-{}".format(job_id, time_stamp))
+    driver_yaml = driver_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     driver_yaml = driver_yaml.replace("{command}", "{}".format(command))
     driver_yaml = driver_yaml.replace("{job_id}", str(job_id))
     with open("press/driver.yaml","w+") as op:
@@ -277,12 +278,12 @@ def create_confmap_service(uid, job_info, time_stamp):
         service_tmplate = service_op.read()
 
     confmap_yaml = confmap_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
-    confmap_yaml = confmap_yaml.replace("{appname}", "appid{}-{}".format(job_id, time_stamp))
+    confmap_yaml = confmap_yaml.replace("{appid}", "appid{}-{}".format(job_id, time_stamp))
     confmap_yaml = confmap_yaml.replace("{uid}",uid)
     with open("press/confmap.yaml","w+") as op:
         op.write(confmap_yaml)
     service_yaml = service_tmplate.replace("{appname}", "debugappname{}-{}".format(job_id,time_stamp))
-    service_yaml = service_yaml.replace("{appname}", "appid{}-{}".format(job_id,time_stamp))
+    service_yaml = service_yaml.replace("{appid}", "appid{}-{}".format(job_id,time_stamp))
     service_yaml = service_yaml.replace("{uid}",uid)
     with open("press/service.yaml","w+") as op:
         op.write(service_yaml)
