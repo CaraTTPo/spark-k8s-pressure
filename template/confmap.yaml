@@ -42,6 +42,7 @@ data:
     spark.eventLog.dir=hdfs\:///spark2-history/
     spark.kubernetes.container.image.pullSecrets={image-pull-secrets}
     spark.driver.extraClassPath=/etc/spark2/conf
+    spark.driver.memory={driver_memory}
     spark.history.kerberos.principal=none
     spark.kubernetes.namespace={namespace}
     spark.executor.instances=1

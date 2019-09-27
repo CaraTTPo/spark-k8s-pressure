@@ -35,6 +35,9 @@ spec:
       value: /opt/spark/conf
     image: {plugin_image}
     imagePullPolicy: Always 
+    securityContext:
+      capabilities:
+        add: ["SYS_PTRACE"]
     name: spark-kubernetes-driver
     ports:
     - containerPort: 7078
