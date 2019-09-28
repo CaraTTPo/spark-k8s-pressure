@@ -62,6 +62,7 @@ def generate_job_and_outputtable(schedules_list):
                     if "args" in config.keys():
                         config['args']["isstreaming"] = str(config['args']["isStreaming"] if "isStreaming" in config['args'].keys() else config['args']["isstreaming"])
                         config['args'].get("spark_conf", {}).get("dependency", {}).pop("data_pipeline", None)
+                        config['args'].pop("KafkaCheckpoint", None)
                     job_list.append((work_id,config["job_id"], job_info["name"], job_info["job_info"]["configs"]["command"], "1G", "0.3", owner, cron_type))
                     for output in config["output"]:
                         outtable_list.append(deepcopy(output))
