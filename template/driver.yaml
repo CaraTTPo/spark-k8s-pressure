@@ -51,10 +51,10 @@ spec:
       protocol: TCP
     resources:
       limits:
-        memory: {driver_memory}
+        memory: {driver_memory_limit}
       requests:
         cpu: {driver_cpu}
-        memory: {driver_memory}
+        memory: {driver_memory_limit}
     terminationMessagePath: /{namespace}/termination-log
     terminationMessagePolicy: File
     volumeMounts:
