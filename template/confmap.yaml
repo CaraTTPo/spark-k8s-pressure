@@ -13,7 +13,8 @@ data:
     spark.kubernetes.driver.volumes.persistentVolumeClaim.log.mount.path=/tmp/log
     spark.kubernetes.driver.volumes.persistentVolumeClaim.log.mount.readOnly=false
     spark.kubernetes.python.mainAppResource=hdfs\:///user/hadoop/etlsdk/run.py
-    spark.ui.enabled=true
+    spark.ui.enabled=false
+    spark.sql.ui.retainedExecutions=10
     spark.files=hdfs\:///user/hadoop/etlsdk/run.py
     spark.history.provider=org.apache.spark.deploy.history.FsHistoryProvider
     spark.kubernetes.container.image={plugin_image}
@@ -28,6 +29,8 @@ data:
     spark.executor.extraJavaOptions=-XX\:MaxDirectMemorySize\=512m
     spark.kubernetes.authenticate.driver.serviceAccountName={service-account-name}
     spark.kubernetes.executor.podNamePrefix={appname}
+    spark.kubernetes.node.selector.env={namespace}
+    spark.kubernetes.node.selector.role={service-account-name}
     spark.history.fs.logDirectory=hdfs\:///spark2-history/
     spark.kubernetes.submitInDriver=true
     spark.kubernetes.pyspark.pythonVersion=3

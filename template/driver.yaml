@@ -79,6 +79,7 @@ spec:
   nodeSelector:
     role: {service-account-name}
     env: {namespace}
+    driver: driver
   tolerations:
   - effect: NoExecute
     key: node.kubernetes.io/not-ready
