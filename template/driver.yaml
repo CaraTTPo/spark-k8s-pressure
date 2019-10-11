@@ -58,7 +58,7 @@ spec:
     terminationMessagePath: /{namespace}/termination-log
     terminationMessagePolicy: File
     volumeMounts:
-    - mountPath: /tmp/log
+    - mountPath: /srv/log
       name: log
     - mountPath: /var/data/spark-58c2dd88-e4d2-4f16-9381-531937827f9e
       name: spark-local-dir-1

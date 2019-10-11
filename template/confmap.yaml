@@ -7,10 +7,10 @@ data:
     spark.kubernetes.resource.type=python
     spark.executor.extraLibraryPath=/usr/hdp/current/hadoop-client/lib/native\:/usr/hdp/current/hadoop-client/lib/native/Linux-amd64-64
     spark.kubernetes.executor.volumes.persistentVolumeClaim.log.options.claimName={namespace}-log
-    spark.kubernetes.executor.volumes.persistentVolumeClaim.log.mount.path=/tmp/log
+    spark.kubernetes.executor.volumes.persistentVolumeClaim.log.mount.path=/srv/log
     spark.kubernetes.executor.volumes.persistentVolumeClaim.log.mount.readOnly=false
     spark.kubernetes.driver.volumes.persistentVolumeClaim.log.options.claimName={namespace}-log
-    spark.kubernetes.driver.volumes.persistentVolumeClaim.log.mount.path=/tmp/log
+    spark.kubernetes.driver.volumes.persistentVolumeClaim.log.mount.path=/srv/log
     spark.kubernetes.driver.volumes.persistentVolumeClaim.log.mount.readOnly=false
     spark.kubernetes.python.mainAppResource=hdfs\:///user/hadoop/etlsdk/run.py
     spark.ui.enabled=false
