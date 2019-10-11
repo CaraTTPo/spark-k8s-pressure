@@ -35,7 +35,7 @@ def generate_schedule(work_ids):
         else:
             continue
         time.sleep(1)
-        for schedule in schedules:
+        for schedule in schedules[::-1]:
             if (schedule["partition_str"]>"2019-09-00" and schedule["status"]=="SUCCESS") or (schedule["cron_type"]=="STREAM" and schedule["status"]=="RUNNING"):
                 schedules_list.append(( schedule["work_id"], schedule["id"], schedule["cron_type"]))
                 print((schedule["work_id"], schedule["id"], schedule["cron_type"]))
@@ -126,7 +126,7 @@ def copy_job_output_dayu_table(outtable_list):
             else:
                 table_info['name'] += "_k8spre"
             table_info['lifecycle']= -1
-            table_info['owner']= '吴婷'
+            table_info['owner']= u'吴婷'
             table_info['alias'] = 'spark on k8s 压测临时表'
             table_info['tags'] = [21]
             table_info['description'] = 'spark on k8s 压测临时表'
@@ -160,7 +160,7 @@ def press_job_on_k8s(job_list):
         save_and_clear_k8s(job_folder_name_map)
 
 def save_log(pod_name, folder_name, status):
-    #os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
+    os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
     log_url = "http://k8s.aipp.io/api/v1/log/file/spark-dev/{}/spark-kubernetes-driver?previous=false".format(pod_name)
     log = requests.get(log_url).text
     with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
@@ -176,6 +176,7 @@ def save_yaml(yaml_dict, folder_name, status):
 def append_log(pod_name, folder_name, status):
     log_url = "http://k8s.aipp.io/api/v1/log/spark-dev/{}".format(pod_name)
     log = requests.get(log_url).text
+    os.makedirs("{}-{}".format(folder_name, status), exist_ok=True, mode=0o777)
     with open("{}-{}/{}.log".format(folder_name, status, pod_name),'w+') as log_op:
         log_op.write(log)
     print("append {}-{}/{}.log".format(folder_name, status, pod_name))
@@ -196,7 +197,6 @@ def save_and_clear_k8s(job_folder_name_map):
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
     pods = v1.list_namespaced_pod(namespace="spark-dev").items
-    pods = []
     for pod in pods:
         time.sleep(1)
         status = pod._status.to_dict()["phase"]
@@ -217,16 +217,12 @@ def save_and_clear_k8s(job_folder_name_map):
             save_yaml(pod.to_dict(), job_folder_name_map[job_id], status.lower())
             if "exec" in pod_name:
                 continue
-            #v1.delete_namespaced_pod(pod_name, "spark-dev")
-            #print("deleted pod {}".format(pod_name))
+            v1.delete_namespaced_pod(pod_name, "spark-dev")
+            print("deleted pod {}".format(pod_name))
         else:
             os.makedirs("{}-{}".format(job_folder_name_map[job_id], "running"), exist_ok=True, mode=0o777)
             append_log(pod_name, job_folder_name_map[job_id], "running")
             save_yaml(pod.to_dict(), job_folder_name_map[job_id], "running")
-            # pod_execs = list_pod_exec(pod_name)
-            # for pod_exec in pod_execs:
-            #     append_log(pod_exec_name, job_folder_name_map[job_id], "running")
-            #     save_yaml(pod_exec.to_dict(), job_folder_name_map[job_id])
 
 def list_running_job():
     config.load_kube_config('/home/ting.wu/.kube/config')
@@ -309,7 +305,7 @@ def submit_job(job_list, index_start):
     client.Configuration.set_default(configuration)
     v1 = client.CoreV1Api()
     running_num = list_running_job()
-    end = index_start+(5-running_num)
+    end = index_start+(30-running_num)
     if end>len(job_list):
         end = len(job_list)
     print("submitting index: from {} to {}".format(index_start, end))
@@ -329,7 +325,11 @@ def main():
     # print("***"*10+"generate work id"+"***"*10)
     # work_ids = generate_work(limit)
     # print(len(work_ids))
-    work_ids = [sys.argv[1]]
+    if len(sys.argv) >1 :
+       work_ids = [sys.argv[1]]
+    else:
+        work_ids = generate_work(0)
+        print(len(work_ids))
     print("***"*10+"generate_schedule id"+"***"*10)
     schedules_list = generate_schedule(work_ids)
     print(len(schedules_list))
@@ -341,7 +341,6 @@ def main():
     copy_job_output_dayu_table(outtable_list)
     print(job_list)
 
-    #job_list = [(1725174, 'Hive2Hive', 'data_pipeline.plugin_base.data_transmit.DataTransmit.hive2hive', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725195, 'Hive2Socrates_1', 'data_pipeline.plugin_base.socrates_plugin.SocratesPlugin.hive2socrates', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1725168, 'Oss2Parsed', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'linqiaosheng', 'WEEK'), (1720648, 'CommonParsedPlugin', 'data_pipeline.plugin_base.common_parsed.CommonParsedPlugin.run', '1G', '0.3', 'herui', 'DAY'), (1717256, 'DayuES2Hive', 'data_pipeline.plugin_base.elasticsearch2hive_plugin.Elasticsearch2HivePlugin.run', '1G', '0.3', 'tulingfeng', 'DAY')]
     print("***"*10+"press_job_on_k8s"+"***"*10)
     press_job_on_k8s(job_list)
 

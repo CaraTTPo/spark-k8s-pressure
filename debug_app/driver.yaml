@@ -24,7 +24,7 @@ spec:
     - name: K8S_NAMESPACE
       value: spark-dev
     - name: LOGPATH
-      value: /tmp/log
+      value: /srv/log
     - name: SPARK_LOCAL_DIRS
       value: /var/data/spark-58c2dd88-e4d2-4f16-9381-531937827f9e
     - name: PYSPARK_PRIMARY
@@ -33,12 +33,10 @@ spec:
       value: "3"
     - name: PYSPARK_APP_ARGS
       value: {command} --config hdfs://tmp/ting.wu/k8s_press/{job_id}.json
-    #- name: PYSPARK_FILES
-    #  value: file:///opt/spark/work-dir/data_pipeline.zip:file:///opt/spark/work-dir/etlsdk.zip
     - name: SPARK_CONF_DIR
       value: /opt/spark/conf
-    image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:k8s_log
-    imagePullPolicy: Always #IfNotPresent
+    image: registry-vpc.cn-hangzhou.aliyuncs.com/eigenlab/data_pipeline:test_conf
+    imagePullPolicy: Always 
     securityContext:
       capabilities:
         add: ["SYS_PTRACE"]
@@ -62,7 +60,7 @@ spec:
     terminationMessagePath: /spark-dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
-    - mountPath: /tmp/log
+    - mountPath: /srv/log
       name: log
     - mountPath: /var/data/spark-58c2dd88-e4d2-4f16-9381-531937827f9e
       name: spark-local-dir-1
@@ -76,7 +74,7 @@ spec:
   - name: aliyun-registry
   restartPolicy: Never
   schedulerName: default-scheduler
-  securityContext: {}
+  securityContext: 
   serviceAccount: spark
   serviceAccountName: spark
   terminationGracePeriodSeconds: 30
@@ -97,7 +95,7 @@ spec:
   - name: log
     persistentVolumeClaim:
       claimName: spark-dev-log
-  - emptyDir: {}
+  - emptyDir: 
     name: spark-local-dir-1
   - configMap:
       defaultMode: 420
